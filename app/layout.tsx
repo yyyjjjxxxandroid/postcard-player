@@ -4,7 +4,7 @@ import "./globals.css";
 
 const title = "寄给未来｜明信片播放器";
 const description =
-  "在歌词经过的某个瞬间，写下一张纸条。下一次听到这里，让过去的心情重新寄回来。";
+  "在歌词经过的某个瞬间，生成一张音乐明信片。下一次听到这里，让过去的心情重新寄回来。";
 
 export async function generateMetadata(): Promise<Metadata> {
   const incomingHeaders = await headers();

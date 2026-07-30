@@ -30,24 +30,44 @@ test("server-renders the postcard music player", async () => {
 
   const html = await response.text();
   assert.match(html, /<title>寄给未来｜明信片播放器<\/title>/);
-  assert.match(html, /慢慢喜欢你/);
-  assert.match(html, /莫文蔚/);
-  assert.match(html, /把此刻的心动，寄给未来的自己。/);
+  assert.match(html, /康定情歌/);
+  assert.match(html, /成方圆/);
+  assert.match(html, /一张寄往未来的音乐明信片/);
+  assert.doesNotMatch(html, /把此刻的心动，寄给未来的自己。/);
+  assert.doesNotMatch(html, /传统民歌/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/);
 });
 
-test("keeps the requested local note and sharing behaviors", async () => {
+test("keeps the requested postcard sharing behaviors", async () => {
   const page = await readFile(
     new URL("../app/page.tsx", import.meta.url),
     "utf8",
   );
+  const css = await readFile(
+    new URL("../app/globals.css", import.meta.url),
+    "utf8",
+  );
 
   assert.match(page, /window\.localStorage/);
-  assert.match(page, /Math\.abs\(note\.time - audio\.currentTime\) <= 0\.8/);
-  assert.match(page, /setTimeout\(\(\) => setVisibleNote\(null\), 4000\)/);
+  assert.match(page, /const DEFAULT_NOTES: MemoryNote\[\] = \[/);
+  assert.match(page, /selectedShareNoteIds/);
+  assert.match(page, /displayedNote/);
+  assert.match(page, /label="分享"/);
+  assert.match(page, /选择要分享的明信片/);
+  assert.match(page, /postcard-note/);
+  assert.match(page, /更多功能暂时留白/);
+  assert.match(page, /createPostcardFile/);
+  assert.match(page, /navigator\.canShare/);
   assert.match(page, /navigator\.share/);
-  assert.match(page, /url\.searchParams\.set\("song"/);
-  assert.match(page, /url\.searchParams\.set\("t"/);
+  assert.match(page, /download = file\.name/);
+  assert.match(page, /share-preview/);
+  assert.match(page, /className="paper-indicator"/);
+  assert.match(page, /查看这首歌的明信片/);
+  assert.doesNotMatch(page, /url\.searchParams\.set\("song"/);
+  assert.doesNotMatch(page, /url\.searchParams\.set\("notes"/);
+  assert.doesNotMatch(page, /className="note-markers"/);
+  assert.doesNotMatch(css, /paper-indicator::before/);
+  assert.doesNotMatch(css, /note-markers/);
   assert.match(page, /<audio/);
   assert.match(page, /type="range"/);
 });

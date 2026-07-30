@@ -194,9 +194,9 @@ textarea:focus-visible {
   position: relative;
   width: 100%;
   max-width: 330px;
-  min-height: 392px;
+  min-height: 360px;
   margin: 0;
-  padding: 19px 18px 22px;
+  padding: 19px 18px 24px;
   overflow: visible;
   transform: rotate(-3.7deg);
   transform-origin: center center;
@@ -328,33 +328,13 @@ textarea:focus-visible {
   transform: skewY(-6deg);
 }
 
-.postcard-copy {
-  position: relative;
-  z-index: 1;
-  padding: 16px 10px 0;
-  font-family: "Kaiti SC", "STKaiti", cursive;
-}
-
-.hand-date {
-  display: inline-block;
-  font-size: 18px;
-  letter-spacing: 0.1em;
-  transform: rotate(-1deg);
-}
-
-.hand-line {
-  display: block;
-  width: 122px;
-  height: 1px;
-  margin-top: 4px;
-  background: rgba(52, 47, 42, 0.74);
-  transform: rotate(-5deg);
-}
-
-.postcard-copy p {
-  margin: 15px 0 0;
-  font-size: clamp(15px, 4.4vw, 18px);
-  letter-spacing: 0.05em;
+.postcard-note {
+  position: absolute;
+  z-index: 5;
+  right: 24px;
+  bottom: 22px;
+  left: 22px;
+  transform: rotate(2.8deg);
 }
 
 .action-rail {
@@ -403,7 +383,7 @@ textarea:focus-visible {
 
 .lyric-panel {
   position: relative;
-  min-height: 204px;
+  min-height: 124px;
   padding: 2px 0 12px;
 }
 
@@ -428,21 +408,17 @@ textarea:focus-visible {
   flex: 0 0 auto;
   width: 21px;
   height: 21px;
+  padding: 0;
+  cursor: pointer;
+  border: 0;
   border-radius: 2px;
   background: #f7e8bb;
   box-shadow: 0 3px 6px rgba(82, 70, 52, 0.18);
 }
 
-.paper-indicator::before {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 7px;
-  height: 7px;
-  content: "";
-  border-radius: 50%;
-  background: #ff765e;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.7);
+.paper-indicator:focus-visible {
+  outline: 2px solid rgba(164, 93, 79, 0.38);
+  outline-offset: 3px;
 }
 
 .paper-indicator::after {
@@ -453,19 +429,6 @@ textarea:focus-visible {
   height: 7px;
   content: "";
   background: linear-gradient(135deg, #dccb9c 50%, rgba(255, 255, 255, 0.8) 51%);
-}
-
-.memory-layer {
-  display: flex;
-  min-height: 75px;
-  align-items: center;
-  padding-left: 36px;
-}
-
-.memory-placeholder {
-  color: rgba(116, 106, 95, 0.43);
-  font-family: "Kaiti SC", "STKaiti", cursive;
-  font-size: 12px;
 }
 
 .floating-note {
@@ -489,6 +452,33 @@ textarea:focus-visible {
     #f8edc9;
   box-shadow: 0 10px 20px rgba(74, 62, 44, 0.16);
   animation: note-arrive 380ms cubic-bezier(0.2, 0.78, 0.2, 1);
+}
+
+.postcard-note .floating-note {
+  width: 100%;
+  min-height: 74px;
+  max-height: 126px;
+  background:
+    linear-gradient(145deg, transparent 0 92%, #e2d2a7 92% 100%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(154, 128, 82, 0.03) 0,
+      rgba(154, 128, 82, 0.03) 1px,
+      transparent 1px,
+      transparent 4px
+    ),
+    rgba(248, 237, 201, 0.95);
+}
+
+.postcard-note .note-main {
+  min-width: 0;
+}
+
+.postcard-note .note-main span {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 @keyframes note-arrive {
@@ -637,28 +627,6 @@ textarea:focus-visible {
 
 .progress-slider:active::-webkit-slider-thumb {
   transform: scale(1.18);
-}
-
-.note-markers {
-  position: absolute;
-  z-index: 2;
-  top: 6px;
-  right: 7px;
-  left: 7px;
-  height: 8px;
-  pointer-events: none;
-}
-
-.note-markers span {
-  position: absolute;
-  top: 0;
-  width: 7px;
-  height: 7px;
-  margin-left: -3px;
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 2px 5px rgba(155, 72, 60, 0.25);
 }
 
 .time-row {
@@ -909,7 +877,8 @@ textarea:focus-visible {
 }
 
 .history-list,
-.comment-list {
+.comment-list,
+.share-list {
   display: grid;
   gap: 10px;
   margin-top: 18px;
@@ -959,6 +928,82 @@ textarea:focus-visible {
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.share-item {
+  display: grid;
+  grid-template-columns: 20px 47px 1fr;
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+  cursor: pointer;
+  border: 1px solid rgba(132, 111, 82, 0.12);
+  border-radius: 14px;
+  background: rgba(255, 251, 240, 0.82);
+}
+
+.share-item input {
+  width: 16px;
+  height: 16px;
+  accent-color: #a45d4f;
+}
+
+.share-item > span:last-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.share-item strong {
+  overflow: hidden;
+  font-family: "Kaiti SC", "STKaiti", cursive;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-item small {
+  overflow: hidden;
+  color: #9b938a;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 6px;
+  color: #9b938a;
+  font-size: 12px;
+}
+
+.share-footer .primary-button {
+  width: auto;
+  padding: 10px 14px;
+}
+
+.share-preview {
+  display: grid;
+  gap: 8px;
+  margin: 6px 0 0;
+}
+
+.share-preview img {
+  display: block;
+  width: min(100%, 220px);
+  overflow: hidden;
+  border: 1px solid rgba(132, 111, 82, 0.14);
+  border-radius: 12px;
+  background: #f7f0e5;
+  box-shadow: 0 10px 22px rgba(57, 51, 45, 0.12);
+}
+
+.share-preview figcaption {
+  color: #9b938a;
+  font-size: 11px;
 }
 
 .delete-note {

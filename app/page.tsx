@@ -40,7 +40,6 @@ const SONG = {
     "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/2a/f5/98/2af5983d-5a64-77d6-2c41-a8084932e347/mzaf_11821463918537745557.plus.aac.p.m4a",
   cover:
     "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/09/2a/ef/092aefde-c538-7470-1eff-e0ebc5d58343/chengfangyuan.jpg/600x600bb.jpg",
-  postcardDate: "传统民歌",
 };
 
 const INITIAL_TIME = 0;
@@ -153,6 +152,173 @@ function nearestLyricIndex(time: number) {
   return index;
 }
 
+function wrapCanvasText(
+  context: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+) {
+  const lines: string[] = [];
+  let current = "";
+  for (const char of text) {
+    const next = `${current}${char}`;
+    if (context.measureText(next).width > maxWidth && current) {
+      lines.push(current);
+      current = char;
+    } else {
+      current = next;
+    }
+  }
+  if (current) lines.push(current);
+  return lines;
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+async function createPostcardCanvas(note: MemoryNote) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 900;
+  canvas.height = 1240;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Canvas is not supported");
+
+  context.fillStyle = "#efe8dd";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.save();
+  context.shadowColor = "rgba(56, 48, 39, 0.22)";
+  context.shadowBlur = 36;
+  context.shadowOffsetY = 20;
+  drawRoundedRect(context, 58, 54, 784, 1118, 36);
+  context.fillStyle = "#f8f1e6";
+  context.fill();
+  context.restore();
+
+  drawRoundedRect(context, 86, 86, 728, 728, 28);
+  context.save();
+  context.clip();
+  try {
+    const cover = await loadImage(SONG.cover);
+    const sourceSize = Math.min(cover.naturalWidth, cover.naturalHeight);
+    const sourceX = (cover.naturalWidth - sourceSize) / 2;
+    const sourceY = (cover.naturalHeight - sourceSize) / 2;
+    context.drawImage(
+      cover,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize,
+      86,
+      86,
+      728,
+      728,
+    );
+  } catch {
+    const fallback = context.createLinearGradient(86, 86, 814, 814);
+    fallback.addColorStop(0, "#d8cfbf");
+    fallback.addColorStop(1, "#b8a58d");
+    context.fillStyle = fallback;
+    context.fillRect(86, 86, 728, 728);
+  }
+  const coverShade = context.createLinearGradient(86, 86, 86, 814);
+  coverShade.addColorStop(0, "rgba(255,255,255,0.08)");
+  coverShade.addColorStop(1, "rgba(55,42,30,0.25)");
+  context.fillStyle = coverShade;
+  context.fillRect(86, 86, 728, 728);
+  context.restore();
+
+  context.save();
+  context.translate(592, 96);
+  context.rotate(0.12);
+  context.strokeStyle = "rgba(178, 68, 54, 0.82)";
+  context.lineWidth = 9;
+  context.beginPath();
+  context.arc(96, 96, 78, 0, Math.PI * 2);
+  context.stroke();
+  context.font = "700 28px sans-serif";
+  context.fillStyle = "rgba(178, 68, 54, 0.86)";
+  context.textAlign = "center";
+  context.fillText("音乐明信片", 96, 94);
+  context.font = "700 22px sans-serif";
+  context.fillText(formatTime(note.time), 96, 128);
+  context.restore();
+
+  context.save();
+  context.translate(118, 700);
+  context.rotate(-0.035);
+  context.shadowColor = "rgba(74, 62, 44, 0.18)";
+  context.shadowBlur = 18;
+  context.shadowOffsetY = 10;
+  drawRoundedRect(context, 0, 0, 664, 260, 18);
+  context.fillStyle = "#f8edc9";
+  context.fill();
+  context.restore();
+
+  context.fillStyle = "#8b6f48";
+  context.font = "28px serif";
+  context.textAlign = "left";
+  context.fillText(`${formatTime(note.time)}  ${note.lyric}`, 148, 770);
+
+  context.fillStyle = "#443d35";
+  context.font = "52px serif";
+  const noteLines = wrapCanvasText(context, note.content, 560).slice(0, 3);
+  noteLines.forEach((line, index) => {
+    context.fillText(line, 148, 850 + index * 62);
+  });
+
+  context.fillStyle = "#60574e";
+  context.font = "700 42px serif";
+  context.fillText(SONG.title, 108, 1044);
+  context.fillStyle = "#8a8177";
+  context.font = "30px sans-serif";
+  context.fillText(SONG.artist, 108, 1090);
+  context.textAlign = "right";
+  context.fillText("寄给未来", 792, 1090);
+
+  return canvas;
+}
+
+async function createPostcardFile(note: MemoryNote) {
+  const canvas = await createPostcardCanvas(note);
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((result) => {
+      if (result) resolve(result);
+      else reject(new Error("Failed to create postcard image"));
+    }, "image/png");
+  });
+  return new File([blob], `${SONG.id}-${Math.round(note.time)}.png`, {
+    type: "image/png",
+  });
+}
+
 function ActionButton({
   label,
   children,
@@ -177,7 +343,15 @@ function ActionButton({
   );
 }
 
-function Postcard() {
+function Postcard({
+  note,
+  onOpenNote,
+  onCloseNote,
+}: {
+  note: MemoryNote | null;
+  onOpenNote: () => void;
+  onCloseNote: () => void;
+}) {
   return (
     <figure className="postcard" aria-label="一张寄往未来的音乐明信片">
       <div className="postcard-photo">
@@ -198,13 +372,13 @@ function Postcard() {
         <i />
         <i />
       </div>
-      <div className="postcard-copy">
-        <span className="hand-date">{SONG.postcardDate}</span>
-        <span className="hand-line" aria-hidden="true" />
-        <p>把此刻的心动，寄给未来的自己。</p>
-      </div>
+      {note ? (
+        <div className="postcard-note">
+          <FloatingNote note={note} onOpen={onOpenNote} onClose={onCloseNote} />
+        </div>
+      ) : null}
       <figcaption className="sr-only">
-        《康定情歌》为传统中文民歌
+        《康定情歌》音乐明信片封面
       </figcaption>
     </figure>
   );
@@ -225,7 +399,7 @@ function FloatingNote({
         className="note-main"
         type="button"
         onClick={onOpen}
-        aria-label={`跳转到 ${formatTime(note.time)} 的纸条`}
+        aria-label={`跳转到 ${formatTime(note.time)} 的明信片`}
       >
         <span>{note.content}</span>
         <small>{formatNoteDate(note.createdAt)}</small>
@@ -233,7 +407,7 @@ function FloatingNote({
       <button
         className="note-close"
         type="button"
-        aria-label="关闭纸条"
+        aria-label="关闭明信片"
         onClick={onClose}
       >
         <X size={15} />
@@ -270,7 +444,7 @@ function NoteComposer({
         <div className="composer-heading">
           <div>
             <span className="eyebrow">写给未来</span>
-            <h2>留下这一秒的心情</h2>
+            <h2>生成一张音乐明信片</h2>
           </div>
           <button type="button" onClick={onCancel} aria-label="关闭编辑">
             <X size={20} />
@@ -292,7 +466,7 @@ function NoteComposer({
           <span>{content.length}/80</span>
           <button className="primary-button" type="submit" disabled={!content.trim()}>
             <Send size={16} />
-            寄出纸条
+            寄出明信片
           </button>
         </div>
       </form>
@@ -303,30 +477,49 @@ function NoteComposer({
 function BottomSheet({
   mode,
   notes,
+  selectedShareNoteIds,
+  sharePreviewUrl,
+  isGeneratingShare,
   onClose,
   onSelectNote,
   onDeleteNote,
+  onToggleShareNote,
+  onShareNotes,
 }: {
-  mode: "history" | "comments";
+  mode: "history" | "comments" | "share";
   notes: MemoryNote[];
+  selectedShareNoteIds: string[];
+  sharePreviewUrl: string;
+  isGeneratingShare: boolean;
   onClose: () => void;
   onSelectNote: (note: MemoryNote) => void;
   onDeleteNote: (note: MemoryNote) => void;
+  onToggleShareNote: (noteId: string) => void;
+  onShareNotes: () => void;
 }) {
+  const sortedNotes = [...notes].sort((a, b) => a.time - b.time);
+  const selectedCount = selectedShareNoteIds.length;
+  const sheetTitle =
+    mode === "history"
+      ? "这首歌里的明信片"
+      : mode === "share"
+        ? "选择要分享的明信片"
+        : "94 条评论";
+  const sheetEyebrow =
+    mode === "history" ? "时光邮局" : mode === "share" ? "分享" : "听友留言";
+
   return (
     <div className="sheet-backdrop" role="presentation" onMouseDown={onClose}>
       <section
         className="bottom-sheet"
         onMouseDown={(event) => event.stopPropagation()}
-        aria-label={mode === "history" ? "纸条历史" : "歌曲评论"}
+        aria-label={sheetTitle}
       >
         <div className="sheet-handle" />
         <header>
           <div>
-            <span className="eyebrow">
-              {mode === "history" ? "时光邮局" : "听友留言"}
-            </span>
-            <h2>{mode === "history" ? "这首歌里的纸条" : "94 条评论"}</h2>
+            <span className="eyebrow">{sheetEyebrow}</span>
+            <h2>{sheetTitle}</h2>
           </div>
           <button type="button" onClick={onClose} aria-label="关闭">
             <X size={20} />
@@ -336,31 +529,72 @@ function BottomSheet({
         {mode === "history" ? (
           <div className="history-list">
             {notes.length ? (
-              [...notes]
-                .sort((a, b) => a.time - b.time)
-                .map((note) => (
-                  <article className="history-item" key={note.id}>
-                    <button type="button" onClick={() => onSelectNote(note)}>
-                      <span className="history-time">{formatTime(note.time)}</span>
-                      <strong>{note.content}</strong>
-                      <small>{note.lyric}</small>
-                    </button>
-                    <button
-                      className="delete-note"
-                      type="button"
-                      onClick={() => onDeleteNote(note)}
-                      aria-label={`删除纸条：${note.content}`}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </article>
-                ))
+              sortedNotes.map((note) => (
+                <article className="history-item" key={note.id}>
+                  <button type="button" onClick={() => onSelectNote(note)}>
+                    <span className="history-time">{formatTime(note.time)}</span>
+                    <strong>{note.content}</strong>
+                    <small>{note.lyric}</small>
+                  </button>
+                  <button
+                    className="delete-note"
+                    type="button"
+                    onClick={() => onDeleteNote(note)}
+                    aria-label={`删除明信片：${note.content}`}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </article>
+              ))
             ) : (
               <div className="empty-state">
                 <Music2 size={24} />
-                <p>还没有纸条。等某句歌词经过时，写下一点什么吧。</p>
+                <p>还没有明信片。等某句歌词经过时，写下一点什么吧。</p>
               </div>
             )}
+          </div>
+        ) : mode === "share" ? (
+          <div className="share-list">
+            {notes.length ? (
+              sortedNotes.map((note) => (
+                <label className="share-item" key={note.id}>
+                  <input
+                    type="checkbox"
+                    checked={selectedShareNoteIds.includes(note.id)}
+                    onChange={() => onToggleShareNote(note.id)}
+                  />
+                  <span className="history-time">{formatTime(note.time)}</span>
+                  <span>
+                    <strong>{note.content}</strong>
+                    <small>{note.lyric}</small>
+                  </span>
+                </label>
+              ))
+            ) : (
+              <div className="empty-state">
+                <Music2 size={24} />
+                <p>还没有可分享的明信片。</p>
+              </div>
+            )}
+            <div className="share-footer">
+              <span>已选择 {selectedCount} 张</span>
+              <button
+                className="primary-button"
+                type="button"
+                disabled={!selectedCount || isGeneratingShare}
+                onClick={onShareNotes}
+              >
+                <Share2 size={16} />
+                {isGeneratingShare ? "生成中" : "分享"}
+              </button>
+            </div>
+            {sharePreviewUrl ? (
+              <figure className="share-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sharePreviewUrl} alt="音乐明信片分享预览" />
+                <figcaption>预览第一张明信片</figcaption>
+              </figure>
+            ) : null}
           </div>
         ) : (
           <div className="comment-list">
@@ -400,9 +634,12 @@ export default function Home() {
     time: number;
     lyric: string;
   } | null>(null);
-  const [sheetMode, setSheetMode] = useState<"history" | "comments" | null>(
+  const [sheetMode, setSheetMode] = useState<"history" | "comments" | "share" | null>(
     null,
   );
+  const [selectedShareNoteIds, setSelectedShareNoteIds] = useState<string[]>([]);
+  const [sharePreviewUrl, setSharePreviewUrl] = useState("");
+  const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [toast, setToast] = useState("");
 
   const lyricIndex = useMemo(() => nearestLyricIndex(currentTime), [currentTime]);
@@ -417,6 +654,11 @@ export default function Home() {
       .sort((a, b) => b.time - a.time)[0] ?? null;
   }, [currentTime, notes]);
   const displayedNote = timelineNote?.id === dismissedNoteId ? null : timelineNote;
+  const selectedShareNotes = useMemo(() => {
+    return notes
+      .filter((note) => selectedShareNoteIds.includes(note.id))
+      .sort((a, b) => a.time - b.time);
+  }, [notes, selectedShareNoteIds]);
   const progress = Math.min(100, Math.max(0, (currentTime / duration) * 100));
 
   const showNote = useCallback((note: MemoryNote) => {
@@ -483,6 +725,22 @@ export default function Home() {
     const timer = setTimeout(() => setToast(""), 2200);
     return () => clearTimeout(timer);
   }, [toast]);
+
+  useEffect(() => {
+    if (sheetMode !== "share" || !selectedShareNotes.length) return;
+    let cancelled = false;
+    createPostcardCanvas(selectedShareNotes[0])
+      .then((canvas) => {
+        if (!cancelled) setSharePreviewUrl(canvas.toDataURL("image/png"));
+      })
+      .catch(() => {
+        if (!cancelled) setSharePreviewUrl("");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedShareNotes, sheetMode]);
 
   function persistNotes(nextNotes: MemoryNote[]) {
     setNotes(nextNotes);
@@ -561,7 +819,7 @@ export default function Home() {
     persistNotes([...notes, note]);
     setComposerMoment(null);
     showNote(note);
-    setToast("纸条已寄往未来");
+    setToast("明信片已寄往未来");
   }
 
   function selectHistoryNote(note: MemoryNote) {
@@ -573,33 +831,58 @@ export default function Home() {
   function deleteNote(note: MemoryNote) {
     persistNotes(notes.filter((item) => item.id !== note.id));
     if (displayedNote?.id === note.id) setDismissedNoteId(null);
-    setToast("纸条已移除");
+    setToast("明信片已移除");
   }
 
-  async function shareMoment() {
-    const selectedNote = currentMomentNote ?? displayedNote;
-    const url = new URL(window.location.href);
-    url.search = "";
-    url.searchParams.set("song", SONG.id);
-    url.searchParams.set("t", Math.round(currentTime).toString());
-    if (selectedNote?.content) {
-      url.searchParams.set("note", selectedNote.content);
+  function openShareSheet() {
+    const defaultIds = notes.map((note) => note.id);
+    setSelectedShareNoteIds(defaultIds);
+    setSharePreviewUrl("");
+    setSheetMode("share");
+  }
+
+  function toggleShareNote(noteId: string) {
+    setSharePreviewUrl("");
+    setSelectedShareNoteIds((current) =>
+      current.includes(noteId)
+        ? current.filter((id) => id !== noteId)
+        : [...current, noteId],
+    );
+  }
+
+  async function shareSelectedNotes() {
+    if (!selectedShareNotes.length) {
+      setToast("先选择要分享的明信片");
+      return;
     }
-    const shareData = {
-      title: `${SONG.title} · ${SONG.artist}`,
-      text: selectedNote?.content
-        ? `听到这里时，我写下：${selectedNote.content}`
-        : `和我一起听 ${SONG.title}`,
-      url: url.toString(),
-    };
+    setIsGeneratingShare(true);
     try {
-      if (navigator.share) await navigator.share(shareData);
-      else {
-        await navigator.clipboard.writeText(url.toString());
-        setToast("时间点链接已复制");
+      const files = await Promise.all(selectedShareNotes.map(createPostcardFile));
+      const shareData = {
+        title: `${SONG.title} · 音乐明信片`,
+        text: `我给你寄来 ${files.length} 张《${SONG.title}》音乐明信片`,
+        files,
+      };
+      if (navigator.canShare?.({ files }) && navigator.share) {
+        await navigator.share(shareData);
+        setSheetMode(null);
+      } else {
+        files.forEach((file) => {
+          const href = URL.createObjectURL(file);
+          const link = document.createElement("a");
+          link.href = href;
+          link.download = file.name;
+          document.body.append(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(href);
+        });
+        setToast("已生成明信片图片");
       }
     } catch {
-      setToast("已保留当前时间点");
+      setToast("已保留明信片选择");
+    } finally {
+      setIsGeneratingShare(false);
     }
   }
 
@@ -650,18 +933,26 @@ export default function Home() {
         </header>
 
         <div className="postcard-stage">
-          <Postcard />
+          <Postcard
+            note={displayedNote}
+            onOpenNote={() => {
+              if (displayedNote) selectHistoryNote(displayedNote);
+            }}
+            onCloseNote={() => {
+              if (displayedNote) setDismissedNoteId(displayedNote.id);
+            }}
+          />
           <nav className="action-rail" aria-label="歌曲操作">
-            <ActionButton label="音效" active={soundOn} onClick={toggleSound}>
+            <ActionButton label="音效" onClick={toggleSound}>
               {soundOn ? <Headphones size={22} /> : <VolumeX size={22} />}
             </ActionButton>
-            <ActionButton label="分享" onClick={shareMoment}>
+            <ActionButton label="分享" onClick={openShareSheet}>
               <Share2 size={22} />
             </ActionButton>
             <ActionButton label="喜欢" active={liked} onClick={toggleLike}>
               <Heart size={23} fill={liked ? "currentColor" : "none"} />
             </ActionButton>
-            <ActionButton label="更多" onClick={() => setSheetMode("history")}>
+            <ActionButton label="更多" onClick={() => setToast("更多功能暂时留白")}>
               <MoreHorizontal size={24} />
             </ActionButton>
           </nav>
@@ -670,22 +961,12 @@ export default function Home() {
         <section className="lyric-panel" aria-label="滚动歌词">
           <div className="lyric-kicker">
             <span>{LYRICS[Math.max(0, lyricIndex - 1)].text}</span>
-            <span className="paper-indicator" aria-hidden="true" />
-          </div>
-          <div className="memory-layer">
-            {displayedNote ? (
-              <FloatingNote
-                note={displayedNote}
-                onOpen={() => selectHistoryNote(displayedNote)}
-                onClose={() => {
-                  setDismissedNoteId(displayedNote.id);
-                }}
-              />
-            ) : (
-              <span className="memory-placeholder">
-                听到旧时光时，纸条会从这里回来
-              </span>
-            )}
+            <button
+              className="paper-indicator"
+              type="button"
+              onClick={() => setSheetMode("history")}
+              aria-label="查看这首歌的明信片"
+            />
           </div>
           <div className="current-lyric-row">
             <h2>{currentLyric.text}</h2>
@@ -767,7 +1048,7 @@ export default function Home() {
             </button>
             <button type="button" onClick={() => setSheetMode("history")}>
               <ListMusic size={22} />
-              <span className="sr-only">纸条列表</span>
+              <span className="sr-only">明信片列表</span>
             </button>
           </div>
         </section>
@@ -786,9 +1067,17 @@ export default function Home() {
         <BottomSheet
           mode={sheetMode}
           notes={notes}
-          onClose={() => setSheetMode(null)}
+          selectedShareNoteIds={selectedShareNoteIds}
+          sharePreviewUrl={sharePreviewUrl}
+          isGeneratingShare={isGeneratingShare}
+          onClose={() => {
+            setSheetMode(null);
+            setSharePreviewUrl("");
+          }}
           onSelectNote={selectHistoryNote}
           onDeleteNote={deleteNote}
+          onToggleShareNote={toggleShareNote}
+          onShareNotes={shareSelectedNotes}
         />
       ) : null}
 
