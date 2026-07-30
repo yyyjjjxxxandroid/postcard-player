@@ -33,7 +33,7 @@ import {
 } from "react";
 
 const SONG = {
-  id: "kangding-love-song-preview",
+  id: "kangding-love-song-preview-v2",
   title: "康定情歌",
   artist: "成方圆",
   audio:
@@ -75,15 +75,53 @@ type MemoryNote = {
   source?: "local" | "shared";
 };
 
-const DEMO_NOTE: MemoryNote = {
-  id: "demo-kangding",
-  songId: SONG.id,
-  time: 17.8,
-  lyric: LYRICS[4].text,
-  content: "这句一出来就很有民歌的甜。",
-  createdAt: "2026-07-30T12:00:00.000Z",
-  source: "local",
-};
+const DEFAULT_NOTES: MemoryNote[] = [
+  {
+    id: "demo-kangding-hills",
+    songId: SONG.id,
+    time: 3.2,
+    lyric: LYRICS[0].text,
+    content: "山路一打开，心也跟着亮了一下。",
+    createdAt: "2026-07-30T12:00:00.000Z",
+    source: "local",
+  },
+  {
+    id: "demo-kangding-cloud",
+    songId: SONG.id,
+    time: 10.2,
+    lyric: LYRICS[2].text,
+    content: "这一句像云影落在城墙上。",
+    createdAt: "2026-07-30T12:01:00.000Z",
+    source: "local",
+  },
+  {
+    id: "demo-kangding-moon",
+    songId: SONG.id,
+    time: 17.8,
+    lyric: LYRICS[4].text,
+    content: "月亮弯弯，这里最有民歌的甜。",
+    createdAt: "2026-07-30T12:02:00.000Z",
+    source: "local",
+  },
+  {
+    id: "demo-kangding-city",
+    songId: SONG.id,
+    time: 22.4,
+    lyric: LYRICS[5].text,
+    content: "唱到康定城，像有人在远处招手。",
+    createdAt: "2026-07-30T12:03:00.000Z",
+    source: "local",
+  },
+  {
+    id: "demo-kangding-sister",
+    songId: SONG.id,
+    time: 26.2,
+    lyric: LYRICS[6].text,
+    content: "故事开始拐进人群，忽然就热闹了。",
+    createdAt: "2026-07-30T12:04:00.000Z",
+    source: "local",
+  },
+];
 
 function formatTime(value: number) {
   if (!Number.isFinite(value) || value < 0) return "00:00";
@@ -349,15 +387,13 @@ function BottomSheet({
 
 export default function Home() {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const noteTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastTriggeredRef = useRef<string | null>(null);
   const shareSeekRef = useRef<number | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(INITIAL_TIME);
   const [duration, setDuration] = useState(FALLBACK_DURATION);
-  const [notes, setNotes] = useState<MemoryNote[]>([DEMO_NOTE]);
-  const [visibleNote, setVisibleNote] = useState<MemoryNote | null>(DEMO_NOTE);
+  const [notes, setNotes] = useState<MemoryNote[]>(DEFAULT_NOTES);
+  const [dismissedNoteId, setDismissedNoteId] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
   const [soundOn, setSoundOn] = useState(true);
   const [composerMoment, setComposerMoment] = useState<{
@@ -375,12 +411,17 @@ export default function Home() {
   const currentMomentNote = notes.find(
     (note) => Math.abs(note.time - currentTime) <= 1.2,
   );
+  const timelineNote = useMemo(() => {
+    return [...notes]
+      .filter((note) => note.time <= currentTime + 0.2)
+      .sort((a, b) => b.time - a.time)[0] ?? null;
+  }, [currentTime, notes]);
+  const displayedNote = timelineNote?.id === dismissedNoteId ? null : timelineNote;
   const progress = Math.min(100, Math.max(0, (currentTime / duration) * 100));
 
   const showNote = useCallback((note: MemoryNote) => {
-    if (noteTimerRef.current) clearTimeout(noteTimerRef.current);
-    setVisibleNote(note);
-    noteTimerRef.current = setTimeout(() => setVisibleNote(null), 4000);
+    void note;
+    setDismissedNoteId(null);
   }, []);
 
   useEffect(() => {
@@ -394,7 +435,7 @@ export default function Home() {
         window.localStorage.removeItem(STORAGE_KEY);
       }
     } else {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify([DEMO_NOTE]));
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(DEFAULT_NOTES));
     }
     const savedLiked = window.localStorage.getItem(LIKE_KEY) === "true";
 
@@ -422,16 +463,18 @@ export default function Home() {
     }
 
     const frame = window.requestAnimationFrame(() => {
-      if (savedNotes) setNotes(savedNotes);
+      const nextNotes =
+        sharedNote && !(savedNotes ?? DEFAULT_NOTES).some((note) => note.id === sharedNote.id)
+          ? [...(savedNotes ?? DEFAULT_NOTES), sharedNote]
+          : savedNotes;
+      if (nextNotes) setNotes(nextNotes);
       setLiked(savedLiked);
       if (sharedTime !== null) setCurrentTime(sharedTime);
       if (sharedNote) showNote(sharedNote);
-      else noteTimerRef.current = setTimeout(() => setVisibleNote(null), 4000);
     });
 
     return () => {
       window.cancelAnimationFrame(frame);
-      if (noteTimerRef.current) clearTimeout(noteTimerRef.current);
     };
   }, [showNote]);
 
@@ -455,8 +498,7 @@ export default function Home() {
     setCurrentTime(audio.currentTime);
 
     if (!new URLSearchParams(window.location.search).get("note")) {
-      const nearby = notes.find((note) => Math.abs(note.time - target) <= 0.8);
-      if (nearby) showNote(nearby);
+      setDismissedNoteId(null);
     }
   }
 
@@ -464,15 +506,6 @@ export default function Home() {
     const audio = audioRef.current;
     if (!audio) return;
     setCurrentTime(audio.currentTime);
-    const nearby = notes.find(
-      (note) => Math.abs(note.time - audio.currentTime) <= 0.8,
-    );
-    if (nearby && lastTriggeredRef.current !== nearby.id) {
-      lastTriggeredRef.current = nearby.id;
-      showNote(nearby);
-    } else if (!nearby) {
-      lastTriggeredRef.current = null;
-    }
   }
 
   async function togglePlayback() {
@@ -539,12 +572,12 @@ export default function Home() {
 
   function deleteNote(note: MemoryNote) {
     persistNotes(notes.filter((item) => item.id !== note.id));
-    if (visibleNote?.id === note.id) setVisibleNote(null);
+    if (displayedNote?.id === note.id) setDismissedNoteId(null);
     setToast("纸条已移除");
   }
 
   async function shareMoment() {
-    const selectedNote = currentMomentNote ?? visibleNote;
+    const selectedNote = currentMomentNote ?? displayedNote;
     const url = new URL(window.location.href);
     url.search = "";
     url.searchParams.set("song", SONG.id);
@@ -640,11 +673,13 @@ export default function Home() {
             <span className="paper-indicator" aria-hidden="true" />
           </div>
           <div className="memory-layer">
-            {visibleNote ? (
+            {displayedNote ? (
               <FloatingNote
-                note={visibleNote}
-                onOpen={() => selectHistoryNote(visibleNote)}
-                onClose={() => setVisibleNote(null)}
+                note={displayedNote}
+                onOpen={() => selectHistoryNote(displayedNote)}
+                onClose={() => {
+                  setDismissedNoteId(displayedNote.id);
+                }}
               />
             ) : (
               <span className="memory-placeholder">
@@ -664,14 +699,6 @@ export default function Home() {
 
         <section className="controls" aria-label="播放控制">
           <div className="progress-wrap">
-            <div className="note-markers" aria-hidden="true">
-              {notes.map((note) => (
-                <span
-                  key={note.id}
-                  style={{ left: `${Math.min(100, (note.time / duration) * 100)}%` }}
-                />
-              ))}
-            </div>
             <input
               className="progress-slider"
               type="range"
