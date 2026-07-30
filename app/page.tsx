@@ -50,23 +50,19 @@ const LYRICS = [
   { time: 4.2, text: "一朵溜溜的云哟" },
   { time: 8.6, text: "端端溜溜的照在" },
   { time: 13, text: "康定溜溜的城哟" },
-  { time: 17.8, text: "月亮弯弯", peak: true },
+  { time: 17.8, text: "月亮弯弯" },
   { time: 21.6, text: "康定溜溜的城哟" },
   { time: 26.2, text: "李家溜溜的大姐" },
   { time: 31, text: "人才溜溜的好哟" },
   { time: 35.5, text: "张家溜溜的大哥" },
   { time: 40, text: "看上溜溜的她哟" },
-  { time: 44.8, text: "月亮弯弯", peak: true },
+  { time: 44.8, text: "月亮弯弯" },
   { time: 48.6, text: "看上溜溜的她哟" },
 ];
-
-const PEAK_WINDOW = 2.6;
-const EASTER_EGG_THRESHOLD = 5;
 
 type Lyric = {
   time: number;
   text: string;
-  peak?: boolean;
 };
 
 type MemoryNote = {
@@ -443,48 +439,22 @@ function ActionButton({
 
 function Postcard({
   note,
-  isPeak,
-  onCoverTap,
   onOpenNote,
   onCloseNote,
 }: {
   note: MemoryNote | null;
-  isPeak: boolean;
-  onCoverTap: () => void;
   onOpenNote: () => void;
   onCloseNote: () => void;
 }) {
   return (
-    <figure
-      className={`postcard${isPeak ? " is-peak" : ""}`}
-      aria-label="一张寄往未来的音乐明信片"
-    >
-      {isPeak ? (
-        <>
-          <span className="peak-glow peak-glow-a" aria-hidden="true" />
-          <span className="peak-glow peak-glow-b" aria-hidden="true" />
-          <span className="peak-spark" aria-hidden="true">
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-        </>
-      ) : null}
-      <button
-        type="button"
-        className="postcard-photo"
-        onClick={onCoverTap}
-        aria-label="轻触封面，点亮月亮"
-      >
+    <figure className="postcard" aria-label="一张寄往未来的音乐明信片">
+      <div className="postcard-photo">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={SONG.cover}
           alt="成方圆《康定情歌》专辑封面"
         />
-      </button>
+      </div>
       <div className="postmark" aria-hidden="true">
         <span className="postmark-arc">心动明信片</span>
         <Heart size={25} fill="currentColor" strokeWidth={1.8} />
@@ -803,7 +773,6 @@ export default function Home() {
   const [sharePreviewUrl, setSharePreviewUrl] = useState("");
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [toast, setToast] = useState("");
-  const [showEgg, setShowEgg] = useState(false);
   const [isSharedVisit, setIsSharedVisit] = useState(false);
 
   const lyricIndex = useMemo(() => nearestLyricIndex(currentTime), [currentTime]);
@@ -892,17 +861,6 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  const isPeak = useMemo(
-    () =>
-      LYRICS.some(
-        (line) => line.peak && Math.abs(line.time - currentTime) <= PEAK_WINDOW / 2,
-      ),
-    [currentTime],
-  );
-
-  const coverTapRef = useRef(0);
-  const coverTapTimer = useRef<number | null>(null);
-
   useEffect(() => {
     if (sheetMode !== "share" || !selectedShareNote) return;
     let cancelled = false;
@@ -966,21 +924,6 @@ export default function Home() {
     setCurrentTime(audio.currentTime);
     if (shouldPlay) {
       audio.play().then(() => setIsPlaying(true)).catch(() => undefined);
-    }
-  }
-
-  function handleCoverTap() {
-    coverTapRef.current += 1;
-    if (coverTapRef.current >= EASTER_EGG_THRESHOLD) {
-      coverTapRef.current = 0;
-      setShowEgg(true);
-      setToast("你点亮了康定的月亮");
-      window.setTimeout(() => setShowEgg(false), 4000);
-    } else {
-      window.clearTimeout(coverTapTimer.current);
-      coverTapTimer.current = window.setTimeout(() => {
-        coverTapRef.current = 0;
-      }, 1400);
     }
   }
 
@@ -1119,8 +1062,6 @@ export default function Home() {
         <div className="postcard-stage">
           <Postcard
             note={displayedNote}
-            isPeak={isPeak || showEgg}
-            onCoverTap={handleCoverTap}
             onOpenNote={() => {
               if (displayedNote) selectHistoryNote(displayedNote);
             }}
