@@ -33,40 +33,34 @@ import {
 } from "react";
 
 const SONG = {
-  id: "slowly-like-you",
-  title: "慢慢喜欢你",
-  artist: "莫文蔚",
+  id: "kangding-love-song-preview",
+  title: "康定情歌",
+  artist: "成方圆",
   audio:
-    "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-  postcardDate: "2026. 07. 29",
+    "https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview122/v4/2a/f5/98/2af5983d-5a64-77d6-2c41-a8084932e347/mzaf_11821463918537745557.plus.aac.p.m4a",
+  cover:
+    "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/09/2a/ef/092aefde-c538-7470-1eff-e0ebc5d58343/chengfangyuan.jpg/600x600bb.jpg",
+  postcardDate: "传统民歌",
 };
 
-const INITIAL_TIME = 18;
-const FALLBACK_DURATION = 221;
+const INITIAL_TIME = 0;
+const FALLBACK_DURATION = 30;
 const STORAGE_KEY = `postcard-notes:${SONG.id}`;
 const LIKE_KEY = `postcard-liked:${SONG.id}`;
 
 const LYRICS = [
-  { time: 0, text: "书里总爱写到喜出望外的傍晚" },
-  { time: 7.5, text: "骑的单车还有他和她的对白" },
-  { time: 14.5, text: "有些瞬间，只想留给未来的自己" },
-  { time: 23, text: "慢慢喜欢你，慢慢地亲密" },
-  { time: 31.5, text: "慢慢聊自己，慢慢和你走在一起" },
-  { time: 40, text: "晚风把今天折成一封轻轻的信" },
-  { time: 49, text: "沿着旧街，一盏一盏路灯亮起" },
-  { time: 58, text: "我把没说完的话藏进旋律" },
-  { time: 68, text: "等下一次相遇，再慢慢说给你听" },
-  { time: 78, text: "日子很长，心事可以慢一点抵达" },
-  { time: 89, text: "我们交换眼神，也交换盛夏" },
-  { time: 101, text: "原来喜欢，是把时间过成柔软的花" },
-  { time: 113, text: "慢慢喜欢你，慢慢记住你" },
-  { time: 125, text: "慢慢把每个寻常，都写成惊喜" },
-  { time: 138, text: "如果多年以后又听见这一句" },
-  { time: 151, text: "愿今天的心动，还会回到你手里" },
-  { time: 164, text: "风从窗边经过，替我翻开回忆" },
-  { time: 177, text: "每一张纸条，都有自己的归期" },
-  { time: 190, text: "慢慢喜欢你，慢慢靠近你" },
-  { time: 203, text: "把此刻的温柔，寄给未来的自己" },
+  { time: 0, text: "跑马溜溜的山上" },
+  { time: 4.2, text: "一朵溜溜的云哟" },
+  { time: 8.6, text: "端端溜溜的照在" },
+  { time: 13, text: "康定溜溜的城哟" },
+  { time: 17.8, text: "月亮弯弯" },
+  { time: 21.6, text: "康定溜溜的城哟" },
+  { time: 26.2, text: "李家溜溜的大姐" },
+  { time: 31, text: "人才溜溜的好哟" },
+  { time: 35.5, text: "张家溜溜的大哥" },
+  { time: 40, text: "看上溜溜的她哟" },
+  { time: 44.8, text: "月亮弯弯" },
+  { time: 48.6, text: "看上溜溜的她哟" },
 ];
 
 type Lyric = (typeof LYRICS)[number];
@@ -82,12 +76,12 @@ type MemoryNote = {
 };
 
 const DEMO_NOTE: MemoryNote = {
-  id: "demo-wind-home",
+  id: "demo-kangding",
   songId: SONG.id,
-  time: INITIAL_TIME,
-  lyric: LYRICS[2].text,
-  content: "那天回家的风很轻。",
-  createdAt: "2025-10-17T20:30:00.000Z",
+  time: 17.8,
+  lyric: LYRICS[4].text,
+  content: "这句一出来就很有民歌的甜。",
+  createdAt: "2026-07-30T12:00:00.000Z",
   source: "local",
 };
 
@@ -149,12 +143,10 @@ function Postcard() {
   return (
     <figure className="postcard" aria-label="一张寄往未来的音乐明信片">
       <div className="postcard-photo">
-        {/* The image is local and intentionally bypasses the worker image
-            optimizer so the Vite preview also works offline. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/postcard-daisies.jpg"
-          alt="夕阳下海边盛开的白色雏菊"
+          src={SONG.cover}
+          alt="成方圆《康定情歌》专辑封面"
         />
       </div>
       <div className="postmark" aria-hidden="true">
@@ -174,7 +166,7 @@ function Postcard() {
         <p>把此刻的心动，寄给未来的自己。</p>
       </div>
       <figcaption className="sr-only">
-        摄影素材来自 Silvia Fang / Unsplash
+        《康定情歌》为传统中文民歌
       </figcaption>
     </figure>
   );
