@@ -568,32 +568,31 @@ function NoteComposer({
 function BottomSheet({
   mode,
   notes,
-  selectedShareNoteIds,
+  selectedShareNoteId,
   shareTemplateId,
   sharePreviewUrl,
   isGeneratingShare,
   onClose,
   onSelectNote,
   onDeleteNote,
-  onToggleShareNote,
+  onSelectShareNote,
   onSelectShareTemplate,
-  onShareNotes,
+  onShare,
 }: {
   mode: "history" | "comments" | "share";
   notes: MemoryNote[];
-  selectedShareNoteIds: string[];
+  selectedShareNoteId: string;
   shareTemplateId: PostcardTemplateId;
   sharePreviewUrl: string;
   isGeneratingShare: boolean;
   onClose: () => void;
   onSelectNote: (note: MemoryNote) => void;
   onDeleteNote: (note: MemoryNote) => void;
-  onToggleShareNote: (noteId: string) => void;
+  onSelectShareNote: (note: MemoryNote) => void;
   onSelectShareTemplate: (templateId: PostcardTemplateId) => void;
-  onShareNotes: () => void;
+  onShare: () => void;
 }) {
   const sortedNotes = [...notes].sort((a, b) => a.time - b.time);
-  const selectedCount = selectedShareNoteIds.length;
   const sheetTitle =
     mode === "history"
       ? "这首歌里的明信片"
@@ -662,7 +661,7 @@ function BottomSheet({
             ) : (
               <div className="share-preview-placeholder">
                 <Palette size={22} />
-                <span>{selectedCount ? "正在生成预览" : "先选择一张明信片"}</span>
+                <span>正在生成预览</span>
               </div>
             )}
             <div className="template-picker" aria-label="选择明信片模板">
@@ -690,36 +689,33 @@ function BottomSheet({
                 </button>
               ))}
             </div>
-            <div className="share-footer">
-              <span>已选择 {selectedCount} 张</span>
-              <button
-                className="primary-button"
-                type="button"
-                disabled={!selectedCount || isGeneratingShare}
-                onClick={onShareNotes}
-              >
-                <Share2 size={16} />
-                {isGeneratingShare ? "生成中" : "分享"}
-              </button>
-            </div>
-            <div className="share-list-heading">换一张或多选</div>
+            <button
+              className="primary-button share-action"
+              type="button"
+              disabled={!selectedShareNoteId || isGeneratingShare}
+              onClick={onShare}
+            >
+              <Share2 size={16} />
+              {isGeneratingShare ? "生成中" : "分享这张明信片"}
+            </button>
+            <div className="share-list-heading">换一张</div>
             {notes.length ? (
               sortedNotes.map((note) => (
-                <label className="share-item" key={note.id}>
-                  <input
-                    type="checkbox"
-                    checked={selectedShareNoteIds.includes(note.id)}
-                    onChange={() => onToggleShareNote(note.id)}
-                  />
+                <button
+                  type="button"
+                  className={`share-item${note.id === selectedShareNoteId ? " is-selected" : ""}`}
+                  key={note.id}
+                  onClick={() => onSelectShareNote(note)}
+                >
                   <span className="history-time">{formatTime(note.time)}</span>
-                  <span>
+                  <span className="share-item-body">
                     <small className="lyric-quote">
                       <Music2 size={12} aria-hidden="true" />
                       <span>“{note.lyric}”</span>
                     </small>
                     <strong>{note.content}</strong>
                   </span>
-                </label>
+                </button>
               ))
             ) : (
               <div className="empty-state">
@@ -768,7 +764,7 @@ export default function Home() {
   const [sheetMode, setSheetMode] = useState<"history" | "comments" | "share" | null>(
     null,
   );
-  const [selectedShareNoteIds, setSelectedShareNoteIds] = useState<string[]>([]);
+  const [selectedShareNoteId, setSelectedShareNoteId] = useState<string>("");
   const [shareTemplateId, setShareTemplateId] =
     useState<PostcardTemplateId>("classic");
   const [sharePreviewUrl, setSharePreviewUrl] = useState("");
@@ -787,11 +783,10 @@ export default function Home() {
       .sort((a, b) => b.time - a.time)[0] ?? null;
   }, [currentTime, notes]);
   const displayedNote = timelineNote?.id === dismissedNoteId ? null : timelineNote;
-  const selectedShareNotes = useMemo(() => {
-    return notes
-      .filter((note) => selectedShareNoteIds.includes(note.id))
-      .sort((a, b) => a.time - b.time);
-  }, [notes, selectedShareNoteIds]);
+  const selectedShareNote = useMemo(
+    () => notes.find((note) => note.id === selectedShareNoteId) ?? null,
+    [notes, selectedShareNoteId],
+  );
   const progress = Math.min(100, Math.max(0, (currentTime / duration) * 100));
 
   const showNote = useCallback((note: MemoryNote) => {
@@ -860,9 +855,9 @@ export default function Home() {
   }, [toast]);
 
   useEffect(() => {
-    if (sheetMode !== "share" || !selectedShareNotes.length) return;
+    if (sheetMode !== "share" || !selectedShareNote) return;
     let cancelled = false;
-    createPostcardCanvas(selectedShareNotes[0], shareTemplateId)
+    createPostcardCanvas(selectedShareNote, shareTemplateId)
       .then((canvas) => {
         if (!cancelled) setSharePreviewUrl(canvas.toDataURL("image/png"));
       })
@@ -873,7 +868,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedShareNotes, shareTemplateId, sheetMode]);
+  }, [selectedShareNote, shareTemplateId, sheetMode]);
 
   function persistNotes(nextNotes: MemoryNote[]) {
     setNotes(nextNotes);
@@ -969,18 +964,14 @@ export default function Home() {
 
   function openShareSheet() {
     const defaultNote = displayedNote ?? currentMomentNote ?? notes[0];
-    setSelectedShareNoteIds(defaultNote ? [defaultNote.id] : []);
+    setSelectedShareNoteId(defaultNote?.id ?? "");
     setSharePreviewUrl("");
     setSheetMode("share");
   }
 
-  function toggleShareNote(noteId: string) {
+  function selectShareNote(note: MemoryNote) {
     setSharePreviewUrl("");
-    setSelectedShareNoteIds((current) =>
-      current.includes(noteId)
-        ? current.filter((id) => id !== noteId)
-        : [...current, noteId],
-    );
+    setSelectedShareNoteId(note.id);
   }
 
   function selectShareTemplate(templateId: PostcardTemplateId) {
@@ -988,36 +979,32 @@ export default function Home() {
     setShareTemplateId(templateId);
   }
 
-  async function shareSelectedNotes() {
-    if (!selectedShareNotes.length) {
-      setToast("先选择要分享的明信片");
+  async function shareCurrentNote() {
+    if (!selectedShareNote) {
+      setToast("先选择一张明信片");
       return;
     }
     setIsGeneratingShare(true);
     try {
-      const files = await Promise.all(
-        selectedShareNotes.map((note) => createPostcardFile(note, shareTemplateId)),
-      );
+      const file = await createPostcardFile(selectedShareNote, shareTemplateId);
       const template = getPostcardTemplate(shareTemplateId);
       const shareData = {
         title: `${SONG.title} · 音乐明信片`,
-        text: `我给你寄来 ${files.length} 张《${SONG.title}》${template.name}明信片`,
-        files,
+        text: `我给你寄来一张《${SONG.title}》${template.name}明信片`,
+        files: [file],
       };
-      if (navigator.canShare?.({ files }) && navigator.share) {
+      if (navigator.canShare?.({ files: [file] }) && navigator.share) {
         await navigator.share(shareData);
         setSheetMode(null);
       } else {
-        files.forEach((file) => {
-          const href = URL.createObjectURL(file);
-          const link = document.createElement("a");
-          link.href = href;
-          link.download = file.name;
-          document.body.append(link);
-          link.click();
-          link.remove();
-          URL.revokeObjectURL(href);
-        });
+        const href = URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.href = href;
+        link.download = file.name;
+        document.body.append(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(href);
         setToast("已生成明信片图片");
       }
     } catch {
@@ -1194,7 +1181,7 @@ export default function Home() {
         <BottomSheet
           mode={sheetMode}
           notes={notes}
-          selectedShareNoteIds={selectedShareNoteIds}
+          selectedShareNoteId={selectedShareNoteId}
           shareTemplateId={shareTemplateId}
           sharePreviewUrl={sharePreviewUrl}
           isGeneratingShare={isGeneratingShare}
@@ -1204,9 +1191,9 @@ export default function Home() {
           }}
           onSelectNote={selectHistoryNote}
           onDeleteNote={deleteNote}
-          onToggleShareNote={toggleShareNote}
+          onSelectShareNote={selectShareNote}
           onSelectShareTemplate={selectShareTemplate}
-          onShareNotes={shareSelectedNotes}
+          onShare={shareCurrentNote}
         />
       ) : null}
 

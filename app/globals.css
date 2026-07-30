@@ -948,23 +948,32 @@ textarea:focus-visible {
 
 .share-item {
   display: grid;
-  grid-template-columns: 20px 47px 1fr;
+  grid-template-columns: 47px 1fr;
   gap: 10px;
   align-items: center;
+  width: 100%;
   padding: 12px;
   cursor: pointer;
+  text-align: left;
   border: 1px solid rgba(132, 111, 82, 0.12);
   border-radius: 14px;
   background: rgba(255, 251, 240, 0.82);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
-.share-item input {
-  width: 16px;
-  height: 16px;
-  accent-color: #a45d4f;
+.share-item:active {
+  transform: scale(0.985);
 }
 
-.share-item > span:last-child {
+.share-item.is-selected {
+  border-color: rgba(164, 93, 79, 0.5);
+  box-shadow: 0 0 0 2px rgba(164, 93, 79, 0.16);
+}
+
+.share-item-body {
   display: grid;
   gap: 2px;
   min-width: 0;
@@ -978,19 +987,10 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
-.share-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 6px;
-  color: #9b938a;
-  font-size: 12px;
-}
-
-.share-footer .primary-button {
-  width: auto;
-  padding: 10px 14px;
+.share-action {
+  width: 100%;
+  justify-content: center;
+  margin-top: 14px;
 }
 
 .share-preview {
