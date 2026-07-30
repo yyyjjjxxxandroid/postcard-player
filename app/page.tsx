@@ -4,12 +4,11 @@ import {
   Bookmark,
   ChevronDown,
   Clock3,
-  Headphones,
   Heart,
   ListMusic,
   MessageCircle,
-  MoreHorizontal,
   Music2,
+  Palette,
   Pause,
   Pencil,
   Play,
@@ -19,7 +18,6 @@ import {
   SkipBack,
   SkipForward,
   Trash2,
-  VolumeX,
   X,
 } from "lucide-react";
 import {
@@ -73,6 +71,56 @@ type MemoryNote = {
   createdAt: string;
   source?: "local" | "shared";
 };
+
+type PostcardTemplateId = "classic" | "record" | "letter";
+
+type PostcardTemplate = {
+  id: PostcardTemplateId;
+  name: string;
+  description: string;
+  accent: string;
+  accentDeep: string;
+  paper: string;
+  card: string;
+  note: string;
+  ink: string;
+};
+
+const POSTCARD_TEMPLATES: PostcardTemplate[] = [
+  {
+    id: "classic",
+    name: "经典邮戳",
+    description: "暖色邮票感",
+    accent: "#b24436",
+    accentDeep: "#8b6f48",
+    paper: "#efe8dd",
+    card: "#f8f1e6",
+    note: "#f8edc9",
+    ink: "#443d35",
+  },
+  {
+    id: "record",
+    name: "唱片歌词",
+    description: "封面唱片感",
+    accent: "#496d75",
+    accentDeep: "#2f555e",
+    paper: "#e7ece9",
+    card: "#f5f6ef",
+    note: "#eaf1e7",
+    ink: "#243a3d",
+  },
+  {
+    id: "letter",
+    name: "手写信笺",
+    description: "留白信纸感",
+    accent: "#9b6b85",
+    accentDeep: "#76566d",
+    paper: "#eee6ef",
+    card: "#fbf6ef",
+    note: "#fff2d7",
+    ink: "#4a3944",
+  },
+];
 
 const DEFAULT_NOTES: MemoryNote[] = [
   {
@@ -203,14 +251,25 @@ function loadImage(src: string) {
   });
 }
 
-async function createPostcardCanvas(note: MemoryNote) {
+function getPostcardTemplate(templateId: PostcardTemplateId) {
+  return (
+    POSTCARD_TEMPLATES.find((template) => template.id === templateId) ??
+    POSTCARD_TEMPLATES[0]
+  );
+}
+
+async function createPostcardCanvas(
+  note: MemoryNote,
+  templateId: PostcardTemplateId = "classic",
+) {
+  const template = getPostcardTemplate(templateId);
   const canvas = document.createElement("canvas");
   canvas.width = 900;
   canvas.height = 1240;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas is not supported");
 
-  context.fillStyle = "#efe8dd";
+  context.fillStyle = template.paper;
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   context.save();
@@ -218,9 +277,20 @@ async function createPostcardCanvas(note: MemoryNote) {
   context.shadowBlur = 36;
   context.shadowOffsetY = 20;
   drawRoundedRect(context, 58, 54, 784, 1118, 36);
-  context.fillStyle = "#f8f1e6";
+  context.fillStyle = template.card;
   context.fill();
   context.restore();
+
+  if (template.id === "letter") {
+    context.strokeStyle = "rgba(118, 86, 109, 0.12)";
+    context.lineWidth = 2;
+    for (let y = 858; y <= 1040; y += 58) {
+      context.beginPath();
+      context.moveTo(108, y);
+      context.lineTo(792, y);
+      context.stroke();
+    }
+  }
 
   drawRoundedRect(context, 86, 86, 728, 728, 28);
   context.save();
@@ -255,16 +325,32 @@ async function createPostcardCanvas(note: MemoryNote) {
   context.fillRect(86, 86, 728, 728);
   context.restore();
 
+  if (template.id === "record") {
+    context.save();
+    context.translate(450, 450);
+    context.strokeStyle = "rgba(36, 58, 61, 0.58)";
+    context.lineWidth = 28;
+    context.beginPath();
+    context.arc(0, 0, 278, 0, Math.PI * 2);
+    context.stroke();
+    context.lineWidth = 6;
+    context.strokeStyle = "rgba(245, 246, 239, 0.74)";
+    context.beginPath();
+    context.arc(0, 0, 112, 0, Math.PI * 2);
+    context.stroke();
+    context.restore();
+  }
+
   context.save();
   context.translate(592, 96);
   context.rotate(0.12);
-  context.strokeStyle = "rgba(178, 68, 54, 0.82)";
+  context.strokeStyle = template.accent;
   context.lineWidth = 9;
   context.beginPath();
   context.arc(96, 96, 78, 0, Math.PI * 2);
   context.stroke();
   context.font = "700 28px sans-serif";
-  context.fillStyle = "rgba(178, 68, 54, 0.86)";
+  context.fillStyle = template.accent;
   context.textAlign = "center";
   context.fillText("音乐明信片", 96, 94);
   context.font = "700 22px sans-serif";
@@ -278,45 +364,50 @@ async function createPostcardCanvas(note: MemoryNote) {
   context.shadowBlur = 18;
   context.shadowOffsetY = 10;
   drawRoundedRect(context, 0, 0, 664, 260, 18);
-  context.fillStyle = "#f8edc9";
+  context.fillStyle = template.note;
   context.fill();
   context.restore();
 
-  context.fillStyle = "#8b6f48";
+  context.fillStyle = template.accentDeep;
   context.font = "28px serif";
   context.textAlign = "left";
   context.fillText(`${formatTime(note.time)}  ♪ “${note.lyric}”`, 148, 770);
 
-  context.fillStyle = "#443d35";
+  context.fillStyle = template.ink;
   context.font = "52px serif";
   const noteLines = wrapCanvasText(context, note.content, 560).slice(0, 3);
   noteLines.forEach((line, index) => {
     context.fillText(line, 148, 850 + index * 62);
   });
 
-  context.fillStyle = "#60574e";
+  context.fillStyle = template.ink;
   context.font = "700 42px serif";
   context.fillText(SONG.title, 108, 1044);
-  context.fillStyle = "#8a8177";
+  context.fillStyle = template.accentDeep;
   context.font = "30px sans-serif";
   context.fillText(SONG.artist, 108, 1090);
   context.textAlign = "right";
-  context.fillText("寄给未来", 792, 1090);
+  context.fillText(template.name, 792, 1090);
 
   return canvas;
 }
 
-async function createPostcardFile(note: MemoryNote) {
-  const canvas = await createPostcardCanvas(note);
+async function createPostcardFile(
+  note: MemoryNote,
+  templateId: PostcardTemplateId,
+) {
+  const canvas = await createPostcardCanvas(note, templateId);
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((result) => {
       if (result) resolve(result);
       else reject(new Error("Failed to create postcard image"));
     }, "image/png");
   });
-  return new File([blob], `${SONG.id}-${Math.round(note.time)}.png`, {
-    type: "image/png",
-  });
+  return new File(
+    [blob],
+    `${SONG.id}-${templateId}-${Math.round(note.time)}.png`,
+    { type: "image/png" },
+  );
 }
 
 function ActionButton({
@@ -478,23 +569,27 @@ function BottomSheet({
   mode,
   notes,
   selectedShareNoteIds,
+  shareTemplateId,
   sharePreviewUrl,
   isGeneratingShare,
   onClose,
   onSelectNote,
   onDeleteNote,
   onToggleShareNote,
+  onSelectShareTemplate,
   onShareNotes,
 }: {
   mode: "history" | "comments" | "share";
   notes: MemoryNote[];
   selectedShareNoteIds: string[];
+  shareTemplateId: PostcardTemplateId;
   sharePreviewUrl: string;
   isGeneratingShare: boolean;
   onClose: () => void;
   onSelectNote: (note: MemoryNote) => void;
   onDeleteNote: (note: MemoryNote) => void;
   onToggleShareNote: (noteId: string) => void;
+  onSelectShareTemplate: (templateId: PostcardTemplateId) => void;
   onShareNotes: () => void;
 }) {
   const sortedNotes = [...notes].sort((a, b) => a.time - b.time);
@@ -503,7 +598,7 @@ function BottomSheet({
     mode === "history"
       ? "这首歌里的明信片"
       : mode === "share"
-        ? "选择要分享的明信片"
+        ? "分享音乐明信片"
         : "94 条评论";
   const sheetEyebrow =
     mode === "history" ? "时光邮局" : mode === "share" ? "分享" : "听友留言";
@@ -558,6 +653,56 @@ function BottomSheet({
           </div>
         ) : mode === "share" ? (
           <div className="share-list">
+            {sharePreviewUrl ? (
+              <figure className="share-preview">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={sharePreviewUrl} alt="音乐明信片分享预览" />
+                <figcaption>当前预览会直接生成分享图片</figcaption>
+              </figure>
+            ) : (
+              <div className="share-preview-placeholder">
+                <Palette size={22} />
+                <span>{selectedCount ? "正在生成预览" : "先选择一张明信片"}</span>
+              </div>
+            )}
+            <div className="template-picker" aria-label="选择明信片模板">
+              {POSTCARD_TEMPLATES.map((template) => (
+                <button
+                  className={template.id === shareTemplateId ? "is-selected" : ""}
+                  type="button"
+                  key={template.id}
+                  onClick={() => onSelectShareTemplate(template.id)}
+                >
+                  <span
+                    className="template-swatch"
+                    style={
+                      {
+                        "--swatch-accent": template.accent,
+                        "--swatch-paper": template.paper,
+                      } as React.CSSProperties
+                    }
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <strong>{template.name}</strong>
+                    <small>{template.description}</small>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div className="share-footer">
+              <span>已选择 {selectedCount} 张</span>
+              <button
+                className="primary-button"
+                type="button"
+                disabled={!selectedCount || isGeneratingShare}
+                onClick={onShareNotes}
+              >
+                <Share2 size={16} />
+                {isGeneratingShare ? "生成中" : "分享"}
+              </button>
+            </div>
+            <div className="share-list-heading">换一张或多选</div>
             {notes.length ? (
               sortedNotes.map((note) => (
                 <label className="share-item" key={note.id}>
@@ -582,25 +727,6 @@ function BottomSheet({
                 <p>还没有可分享的明信片。</p>
               </div>
             )}
-            <div className="share-footer">
-              <span>已选择 {selectedCount} 张</span>
-              <button
-                className="primary-button"
-                type="button"
-                disabled={!selectedCount || isGeneratingShare}
-                onClick={onShareNotes}
-              >
-                <Share2 size={16} />
-                {isGeneratingShare ? "生成中" : "分享"}
-              </button>
-            </div>
-            {sharePreviewUrl ? (
-              <figure className="share-preview">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={sharePreviewUrl} alt="音乐明信片分享预览" />
-                <figcaption>预览第一张明信片</figcaption>
-              </figure>
-            ) : null}
           </div>
         ) : (
           <div className="comment-list">
@@ -635,7 +761,6 @@ export default function Home() {
   const [notes, setNotes] = useState<MemoryNote[]>(DEFAULT_NOTES);
   const [dismissedNoteId, setDismissedNoteId] = useState<string | null>(null);
   const [liked, setLiked] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
   const [composerMoment, setComposerMoment] = useState<{
     time: number;
     lyric: string;
@@ -644,6 +769,8 @@ export default function Home() {
     null,
   );
   const [selectedShareNoteIds, setSelectedShareNoteIds] = useState<string[]>([]);
+  const [shareTemplateId, setShareTemplateId] =
+    useState<PostcardTemplateId>("classic");
   const [sharePreviewUrl, setSharePreviewUrl] = useState("");
   const [isGeneratingShare, setIsGeneratingShare] = useState(false);
   const [toast, setToast] = useState("");
@@ -735,7 +862,7 @@ export default function Home() {
   useEffect(() => {
     if (sheetMode !== "share" || !selectedShareNotes.length) return;
     let cancelled = false;
-    createPostcardCanvas(selectedShareNotes[0])
+    createPostcardCanvas(selectedShareNotes[0], shareTemplateId)
       .then((canvas) => {
         if (!cancelled) setSharePreviewUrl(canvas.toDataURL("image/png"));
       })
@@ -746,7 +873,7 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedShareNotes, sheetMode]);
+  }, [selectedShareNotes, shareTemplateId, sheetMode]);
 
   function persistNotes(nextNotes: MemoryNote[]) {
     setNotes(nextNotes);
@@ -841,8 +968,8 @@ export default function Home() {
   }
 
   function openShareSheet() {
-    const defaultIds = notes.map((note) => note.id);
-    setSelectedShareNoteIds(defaultIds);
+    const defaultNote = displayedNote ?? currentMomentNote ?? notes[0];
+    setSelectedShareNoteIds(defaultNote ? [defaultNote.id] : []);
     setSharePreviewUrl("");
     setSheetMode("share");
   }
@@ -856,6 +983,11 @@ export default function Home() {
     );
   }
 
+  function selectShareTemplate(templateId: PostcardTemplateId) {
+    setSharePreviewUrl("");
+    setShareTemplateId(templateId);
+  }
+
   async function shareSelectedNotes() {
     if (!selectedShareNotes.length) {
       setToast("先选择要分享的明信片");
@@ -863,10 +995,13 @@ export default function Home() {
     }
     setIsGeneratingShare(true);
     try {
-      const files = await Promise.all(selectedShareNotes.map(createPostcardFile));
+      const files = await Promise.all(
+        selectedShareNotes.map((note) => createPostcardFile(note, shareTemplateId)),
+      );
+      const template = getPostcardTemplate(shareTemplateId);
       const shareData = {
         title: `${SONG.title} · 音乐明信片`,
-        text: `我给你寄来 ${files.length} 张《${SONG.title}》音乐明信片`,
+        text: `我给你寄来 ${files.length} 张《${SONG.title}》${template.name}明信片`,
         files,
       };
       if (navigator.canShare?.({ files }) && navigator.share) {
@@ -897,14 +1032,6 @@ export default function Home() {
     setLiked(next);
     window.localStorage.setItem(LIKE_KEY, String(next));
     setToast(next ? "已收藏这首歌" : "已取消收藏");
-  }
-
-  function toggleSound() {
-    const audio = audioRef.current;
-    const next = !soundOn;
-    setSoundOn(next);
-    if (audio) audio.muted = !next;
-    setToast(next ? "声音已打开" : "已静音");
   }
 
   return (
@@ -949,17 +1076,11 @@ export default function Home() {
             }}
           />
           <nav className="action-rail" aria-label="歌曲操作">
-            <ActionButton label="音效" onClick={toggleSound}>
-              {soundOn ? <Headphones size={22} /> : <VolumeX size={22} />}
-            </ActionButton>
             <ActionButton label="分享" onClick={openShareSheet}>
               <Share2 size={22} />
             </ActionButton>
             <ActionButton label="喜欢" active={liked} onClick={toggleLike}>
               <Heart size={23} fill={liked ? "currentColor" : "none"} />
-            </ActionButton>
-            <ActionButton label="更多" onClick={() => setToast("更多功能暂时留白")}>
-              <MoreHorizontal size={24} />
             </ActionButton>
           </nav>
         </div>
@@ -1074,6 +1195,7 @@ export default function Home() {
           mode={sheetMode}
           notes={notes}
           selectedShareNoteIds={selectedShareNoteIds}
+          shareTemplateId={shareTemplateId}
           sharePreviewUrl={sharePreviewUrl}
           isGeneratingShare={isGeneratingShare}
           onClose={() => {
@@ -1083,6 +1205,7 @@ export default function Home() {
           onSelectNote={selectHistoryNote}
           onDeleteNote={deleteNote}
           onToggleShareNote={toggleShareNote}
+          onSelectShareTemplate={selectShareTemplate}
           onShareNotes={shareSelectedNotes}
         />
       ) : null}

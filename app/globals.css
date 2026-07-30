@@ -1014,6 +1014,72 @@ textarea:focus-visible {
   font-size: 11px;
 }
 
+.share-preview-placeholder {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 120px;
+  padding: 24px;
+  color: #9b938a;
+  border: 1px dashed rgba(130, 110, 83, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 251, 240, 0.5);
+  font-size: 12px;
+}
+
+.template-picker {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.template-picker button {
+  display: grid;
+  gap: 6px;
+  padding: 10px 8px;
+  cursor: pointer;
+  text-align: left;
+  color: #4b4640;
+  border: 1px solid rgba(132, 111, 82, 0.14);
+  border-radius: 14px;
+  background: rgba(255, 251, 240, 0.82);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.template-picker button.is-selected {
+  border-color: rgba(164, 93, 79, 0.5);
+  box-shadow: 0 0 0 2px rgba(164, 93, 79, 0.16);
+}
+
+.template-swatch {
+  width: 100%;
+  height: 30px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--swatch-accent), var(--swatch-paper));
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.template-picker strong {
+  display: block;
+  font-size: 12px;
+}
+
+.template-picker small {
+  display: block;
+  color: #9b938a;
+  font-size: 10px;
+}
+
+.share-list-heading {
+  margin-top: 16px;
+  color: #9b938a;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .delete-note {
   position: absolute;
   top: 50%;
