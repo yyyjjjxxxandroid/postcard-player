@@ -922,10 +922,26 @@ textarea:focus-visible {
   white-space: nowrap;
 }
 
-.history-item small {
+.lyric-quote {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
   overflow: hidden;
   color: #9b938a;
   font-size: 11px;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lyric-quote svg {
+  flex: 0 0 auto;
+  color: #a45d4f;
+}
+
+.lyric-quote span {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -958,14 +974,6 @@ textarea:focus-visible {
   overflow: hidden;
   font-family: "Kaiti SC", "STKaiti", cursive;
   font-size: 14px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.share-item small {
-  overflow: hidden;
-  color: #9b938a;
-  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }

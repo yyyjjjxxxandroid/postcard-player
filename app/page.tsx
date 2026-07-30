@@ -285,7 +285,7 @@ async function createPostcardCanvas(note: MemoryNote) {
   context.fillStyle = "#8b6f48";
   context.font = "28px serif";
   context.textAlign = "left";
-  context.fillText(`${formatTime(note.time)}  ${note.lyric}`, 148, 770);
+  context.fillText(`${formatTime(note.time)}  ♪ “${note.lyric}”`, 148, 770);
 
   context.fillStyle = "#443d35";
   context.font = "52px serif";
@@ -533,8 +533,11 @@ function BottomSheet({
                 <article className="history-item" key={note.id}>
                   <button type="button" onClick={() => onSelectNote(note)}>
                     <span className="history-time">{formatTime(note.time)}</span>
+                    <small className="lyric-quote">
+                      <Music2 size={12} aria-hidden="true" />
+                      <span>“{note.lyric}”</span>
+                    </small>
                     <strong>{note.content}</strong>
-                    <small>{note.lyric}</small>
                   </button>
                   <button
                     className="delete-note"
@@ -565,8 +568,11 @@ function BottomSheet({
                   />
                   <span className="history-time">{formatTime(note.time)}</span>
                   <span>
+                    <small className="lyric-quote">
+                      <Music2 size={12} aria-hidden="true" />
+                      <span>“{note.lyric}”</span>
+                    </small>
                     <strong>{note.content}</strong>
-                    <small>{note.lyric}</small>
                   </span>
                 </label>
               ))

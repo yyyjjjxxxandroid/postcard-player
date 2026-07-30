@@ -63,6 +63,8 @@ test("keeps the requested postcard sharing behaviors", async () => {
   assert.match(page, /share-preview/);
   assert.match(page, /className="paper-indicator"/);
   assert.match(page, /查看这首歌的明信片/);
+  assert.match(page, /className="lyric-quote"/);
+  assert.match(page, /♪ “\$\{note\.lyric\}”/);
   assert.doesNotMatch(page, /url\.searchParams\.set\("song"/);
   assert.doesNotMatch(page, /url\.searchParams\.set\("notes"/);
   assert.doesNotMatch(page, /className="note-markers"/);
